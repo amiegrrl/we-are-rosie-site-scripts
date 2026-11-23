@@ -45332,16 +45332,17 @@
               (this.scrollManager = window.app?.scrollManager));
           }
           init() {
-            (super.init(),
-              window.app.globalManager.getIsFirstLoad() &&
-                this.scrollManager &&
-                (this.scrollManager.stop(), this.initIntroAnimation()),
-              this.homeLogoContainer.contains(this.logo) ||
-                this.homeLogoContainer.appendChild(this.logo),
-              this.setupEventListeners(),
-              this.setupPageModules(),
-              this.setUpPinning(),
-              this.setUpFlipAnimation());
+            super.init();
+            this.introPlaying = !!(window.app.globalManager.getIsFirstLoad() && this.scrollManager);
+            this.homeLogoContainer.contains(this.logo) || this.homeLogoContainer.appendChild(this.logo);
+            if (this.introPlaying) {
+                this.scrollManager.stop();
+                this.initIntroAnimation();
+            }
+            this.setupEventListeners();
+            this.setupPageModules();
+            this.setUpPinning();
+            if (!this.introPlaying) this.setUpFlipAnimation();
           }
           initIntroAnimation() {
             ((this.heroContent =
@@ -45389,6 +45390,9 @@
               introTl = gsapWithCSS.timeline({
                 defaults: { ease: `power2.inOut`, duration: 1.3 },
                 onComplete: () => {
+                  gsapWithCSS.set(this.logo, { clearProps: `transform` });
+                  this.introPlaying = false;
+                  this.setUpFlipAnimation();
                   this.scrollManager?.start();
                 },
               });
@@ -45404,7 +45408,7 @@
                 `<`,
               ),
               introTl.to(this.subText.parentElement, { y: 0 }, `>0.5`),
-              introTl.to(this.logo, { y: -distanceFromCenter / 2 }, `<`),
+              introTl.to(this.logo, { y: 0 }, `<`),
               introTl.to(
                 [this.mainText, this.arrowWrapper],
                 { opacity: 1 },
@@ -45429,6 +45433,7 @@
                 handler: handleModuleEvent,
               }),
               (this.flipResizeHandler = () => {
+                if (this.introPlaying) return;
                 if (
                   (this.logFlip(`resize:event`, {
                     pendingResizeRaf: !!this.flipResizeRafId,
