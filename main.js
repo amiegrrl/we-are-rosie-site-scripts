@@ -45626,6 +45626,9 @@
                       logoRect: this.getRectSnapshot(this.logo),
                     }));
                   let tl = gsapWithCSS.timeline({
+                    // Follow the animation itself (not just scrolling), so the logo swap
+                    // also reacts when the mobile menu jumps the animation to its end.
+                    onUpdate: () => this.toggleHeroLogoCopy(tl.progress()),
                     scrollTrigger: {
                       id: `homeFlip`,
                       trigger: this.section2,
@@ -45634,8 +45637,7 @@
                       scrub: !0,
                       markers: !1,
                       invalidateOnRefresh: !0,
-                      onUpdate: (self) => this.toggleHeroLogoCopy(self.progress),
-                      onRefresh: (self) => this.toggleHeroLogoCopy(self.progress),
+                      onRefresh: () => this.toggleHeroLogoCopy(tl.progress()),
                     },
                   });
                   (tl.add(
