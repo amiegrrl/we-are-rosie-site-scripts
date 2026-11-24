@@ -45327,7 +45327,7 @@
               (this.flipSetupInProgress = !1),
               (this.flipSetupQueued = !1),
               (this.flipLastAppliedProgress = null),
-              (this.flipDebug = !0),
+              (this.flipDebug = !1),
               (this.flipDebugSeq = 0),
               (this.scrollManager = window.app?.scrollManager));
           }
@@ -45413,18 +45413,8 @@
                 `<0.4`,
               ),
               introTl.call(() => {
-                this.logFlip(`intro:call before`, { logoRect: this.getRectSnapshot(this.logo) });
                 gsapWithCSS.set(this.logo, { clearProps: `transform` });
-                this.logFlip(`intro:call after clearProps`, { logoRect: this.getRectSnapshot(this.logo) });
                 this.setUpFlipAnimation();
-                let n = 0, last = ``;
-                const watch = () => {
-                  const r = this.logo.getBoundingClientRect();
-                  const k = [r.x, r.y, r.width, r.height].map((v) => v.toFixed(1)).join(`,`);
-                  if (k !== last) { this.logFlip(`watch frame ${n}: x,y,w,h = ${k}`); last = k; }
-                  if (++n < 90) requestAnimationFrame(watch);
-                };
-                requestAnimationFrame(watch);
               }),
               introTl.to(
                 this.heroBackground,
@@ -45584,6 +45574,7 @@
                 (this.logFlip(`setup:revert previous ctx`, { setupToken }),
                 this.flipCtx.revert(),
                 null)),
+              this.removeHeroLogoCopy(),
               this.homeLogoContainer.contains(this.logo) ||
                 (this.homeLogoContainer.appendChild(this.logo),
                 this.logFlip(`setup:logo moved back to home container`, {
@@ -45629,6 +45620,7 @@
                     navRect: this.getRectSnapshot(this.navLogoContainer),
                   }),
                     this.navLogoContainer.appendChild(this.logo),
+                    this.addHeroLogoCopy(),
                     this.logFlip(`setup:logo moved to nav`, {
                       setupToken,
                       logoRect: this.getRectSnapshot(this.logo),
@@ -45642,6 +45634,8 @@
                       scrub: !0,
                       markers: !1,
                       invalidateOnRefresh: !0,
+                      onUpdate: (self) => this.toggleHeroLogoCopy(self.progress),
+                      onRefresh: (self) => this.toggleHeroLogoCopy(self.progress),
                     },
                   });
                   (tl.add(
@@ -45830,8 +45824,51 @@
             console.log(label);
           }
           setupPageModules() {}
+          // Sharpness fix: at the start of the scroll animation the real logo sits in the
+          // nav, scaled up ~2.7x to look like the big hero logo, which renders slightly soft.
+          // While the animation is at its start, show a normal (crisp) copy in the hero
+          // instead, and swap to the real logo as soon as scrolling begins.
+          addHeroLogoCopy() {
+            this.removeHeroLogoCopy();
+            let copy = this.logo.cloneNode(!0);
+            (copy.setAttribute(`aria-hidden`, `true`),
+              copy.removeAttribute(`data-flip-id`),
+              copy.classList.add(`home-hero-logo-copy`),
+              (copy.style.transform = ``));
+            // The logo SVG uses an internal clipPath referenced by id. Give the copy its
+            // own ids, otherwise it would point at the real logo's clipPath (which is
+            // hidden while the copy shows) and render blank.
+            copy.querySelectorAll(`[id]`).forEach((el) => {
+              let oldId = el.id,
+                newId = `${oldId}-hero-copy`;
+              ((el.id = newId),
+                copy.querySelectorAll(`*`).forEach((node) => {
+                  for (let attr of [...node.attributes])
+                    attr.value.includes(`#${oldId})`) &&
+                      node.setAttribute(
+                        attr.name,
+                        attr.value.split(`#${oldId})`).join(`#${newId})`),
+                      );
+                }));
+            });
+            (this.homeLogoContainer.appendChild(copy),
+              (this.heroLogoCopy = copy),
+              this.toggleHeroLogoCopy(0));
+          }
+          toggleHeroLogoCopy(progress) {
+            if (!this.heroLogoCopy) return;
+            let atStart = !(progress > 0.001);
+            ((this.heroLogoCopy.style.visibility = atStart ? `` : `hidden`),
+              (this.logo.style.visibility = atStart ? `hidden` : ``));
+          }
+          removeHeroLogoCopy() {
+            (this.heroLogoCopy?.remove(),
+              (this.heroLogoCopy = null),
+              this.logo && (this.logo.style.visibility = ``));
+          }
           destroy() {
-            (this.logFlip(`destroy:start`, {
+            (this.removeHeroLogoCopy(),
+            this.logFlip(`destroy:start`, {
               activeToken: this.flipSetupToken,
               pendingResizeRaf: this.flipResizeRafId,
               pendingSetupRafs: this.flipSetupRafIds.length,
