@@ -45327,7 +45327,7 @@
               (this.flipSetupInProgress = !1),
               (this.flipSetupQueued = !1),
               (this.flipLastAppliedProgress = null),
-              (this.flipDebug = !1),
+              (this.flipDebug = !0),
               (this.flipDebugSeq = 0),
               (this.scrollManager = window.app?.scrollManager));
           }
@@ -45413,8 +45413,18 @@
                 `<0.4`,
               ),
               introTl.call(() => {
+                this.logFlip(`intro:call before`, { logoRect: this.getRectSnapshot(this.logo) });
                 gsapWithCSS.set(this.logo, { clearProps: `transform` });
+                this.logFlip(`intro:call after clearProps`, { logoRect: this.getRectSnapshot(this.logo) });
                 this.setUpFlipAnimation();
+                let n = 0, last = ``;
+                const watch = () => {
+                  const r = this.logo.getBoundingClientRect();
+                  const k = [r.x, r.y, r.width, r.height].map((v) => v.toFixed(1)).join(`,`);
+                  if (k !== last) { this.logFlip(`watch frame ${n}: x,y,w,h = ${k}`); last = k; }
+                  if (++n < 90) requestAnimationFrame(watch);
+                };
+                requestAnimationFrame(watch);
               }),
               introTl.to(
                 this.heroBackground,
