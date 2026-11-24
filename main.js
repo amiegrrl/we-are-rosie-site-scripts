@@ -45216,10 +45216,6 @@
                 { opacity: 1 },
                 `<0.4`,
               ),
-              introTl.call(() => {
-                gsapWithCSS.set(this.logo, { clearProps: `transform` });
-                this.setUpFlipAnimation();
-              }),
               introTl.to(
                 this.heroBackground,
                 { clipPath: `inset(0% 0 0% 0)`, duration: 1 },
@@ -45416,6 +45412,10 @@
                 { opacity: 1 },
                 `<0.4`,
               ),
+              introTl.call(() => {
+                gsapWithCSS.set(this.logo, { clearProps: `transform` });
+                this.setUpFlipAnimation();
+              }),
               introTl.to(
                 this.heroBackground,
                 { clipPath: `inset(0% 0 0% 0)`, duration: 1 },
